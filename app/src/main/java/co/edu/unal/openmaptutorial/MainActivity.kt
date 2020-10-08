@@ -3,23 +3,27 @@ package co.edu.unal.openmaptutorial
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.preference.PreferenceManager
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.ItemizedIconOverlay
+import org.osmdroid.views.overlay.ItemizedIconOverlay.OnItemGestureListener
+import org.osmdroid.views.overlay.ItemizedOverlayWithFocus
+import org.osmdroid.views.overlay.OverlayItem
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
-import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
     private val REQUEST_PERMISSIONS_REQUEST_CODE = 1
-    private var nMapView: MapView? = null
+    private var mMapView: MapView? = null
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,18 +34,37 @@ class MainActivity : AppCompatActivity() {
 
         //configuracion de la mapView
         setContentView(R.layout.activity_main)
-        nMapView = findViewById<View>(R.id.map) as MapView
-        nMapView!!.setTileSource(TileSourceFactory.MAPNIK)
-        nMapView!!.setMultiTouchControls(true)
+        mMapView = findViewById<View>(R.id.map) as MapView
+        mMapView!!.setTileSource(TileSourceFactory.MAPNIK)
+        mMapView!!.setMultiTouchControls(true)
 
-        val mapController = nMapView!!.controller
+        val mapController = mMapView!!.controller
         mapController.setZoom(18.5)
         val startPoint = GeoPoint(4.6334, -74.0815)
         mapController.setCenter(startPoint)
 
-        val mLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(applicationContext), nMapView!!)
+        val mLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(applicationContext), mMapView!!)
         mLocationOverlay.enableMyLocation()
-        nMapView!!.overlays.add(mLocationOverlay)
+        mMapView!!.overlays.add(mLocationOverlay)
+
+        val items: ArrayList<OverlayItem> = ArrayList()
+        items.add(OverlayItem("Universidad", "Universidad Nacional de Colombia",
+            GeoPoint(4.6334, -74.0815 )))
+        val mItemOverlay =
+            ItemizedIconOverlay<OverlayItem>(
+                items,
+                object : OnItemGestureListener<OverlayItem?> {
+                    override fun onItemSingleTapUp(index: Int, item: OverlayItem?): Boolean {
+                        Toast.makeText(applicationContext, item?.title, Toast.LENGTH_LONG).show()
+                        return true
+                    }
+
+                    override fun onItemLongPress(index: Int, item: OverlayItem?): Boolean {
+                        Toast.makeText(applicationContext, item?.snippet, Toast.LENGTH_LONG).show()
+                        return true
+                    }
+                }, applicationContext)
+        mMapView!!.overlays.add(mItemOverlay)
 
         requestPermissionsIfNecessary(
             arrayOf(
@@ -49,17 +72,16 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
             )
         )
-
     }
 
     public override fun onResume() {
         super.onResume()
-        nMapView!!.onResume()
+        mMapView!!.onResume()
     }
 
     public override fun onPause() {
         super.onPause()
-        nMapView!!.onPause()
+        mMapView!!.onPause()
     }
 
     override fun onRequestPermissionsResult(
